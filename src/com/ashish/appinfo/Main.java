@@ -43,13 +43,24 @@ public class Main extends Activity
 
     private void packageInfoInit() {
       permissionToAppMap = new HashMap<String, ArrayList<PackageInfo>>(100);
-      List<PackageInfo> packageInfos = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS);
-      for (PackageInfo packageInfo: packageInfos) {
-        //log(packageInfo.packageName);
-        if (packageInfo.permissions != null) {
-          for (PermissionInfo permissionInfo: packageInfo.permissions) {
-            String permission = permissionInfo.toString();
-            permission = permission.substring(permission.indexOf(" "), permission.indexOf("}")).trim();
+      List<PackageInfo> packageInfos = pm.getInstalledPackages(0); //PackageManager.GET_PERMISSIONS);
+      for (PackageInfo incompletePackageInfo: packageInfos) {
+        PackageInfo packageInfo = null;
+        try {
+          packageInfo = pm.getPackageInfo(incompletePackageInfo.packageName,
+               PackageManager.GET_ACTIVITIES| PackageManager.GET_GIDS| PackageManager.GET_CONFIGURATIONS|
+               PackageManager.GET_INSTRUMENTATION| PackageManager.GET_PERMISSIONS| PackageManager.GET_PROVIDERS|
+               PackageManager.GET_RECEIVERS| PackageManager.GET_SERVICES| PackageManager.GET_SIGNATURES| 
+               PackageManager.GET_UNINSTALLED_PACKAGES);
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+          log(e.toString());
+          continue;
+        }
+        //log(packageInfo.packageName + packageInfo.permissions);
+        if (packageInfo.requestedPermissions != null) {
+          for (String permission /*PermissionInfo permissionInfo*/: packageInfo.requestedPermissions) {
+            //String permission = permissionInfo.toString();
+            //permission = permission.substring(permission.indexOf(" "), permission.indexOf("}")).trim();
             if (permissionToAppMap.get(permission) == null) {
               permissionToAppMap.put(permission, new ArrayList<PackageInfo>());
             }
@@ -79,8 +90,8 @@ public class Main extends Activity
         for (PackageInfo packageInfo: packages) {
           if ((packageInfo.applicationInfo != null) &&
               ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0)) {
-            log("System package \"" + packageInfo.packageName + " \" has permission \"" +
-                permission + "\"");
+            //log("System package \"" + packageInfo.packageName + " \" has permission \"" +
+            //    permission + "\"");
           } else {
             log("Package \"" + packageInfo.packageName + " \" has permission \"" +
                 permission + "\"");
