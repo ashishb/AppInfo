@@ -86,6 +86,7 @@ public class Main extends Activity
     private void showAppsWithThisPermission(String permission) {
       assert (permissionToAppMap != null);
       ArrayList<PackageInfo> packages = permissionToAppMap.get(permission);
+      log("Permission:" + permission);
       if (packages != null) {
         for (PackageInfo packageInfo: packages) {
           if ((packageInfo.applicationInfo != null) &&
@@ -93,12 +94,11 @@ public class Main extends Activity
             //log("System package \"" + packageInfo.packageName + " \" has permission \"" +
             //    permission + "\"");
           } else {
-            log("Package \"" + packageInfo.packageName + " \" has permission \"" +
-                permission + "\"");
+            log ("Package: " + packageInfo.packageName);
           }
         }
       } else {
-        log("No package found with permission \"" + permission + "\"");
+        log("No package found with this permission");
       }
     }
 
