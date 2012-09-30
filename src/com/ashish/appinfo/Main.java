@@ -48,10 +48,7 @@ public class Main extends Activity
         PackageInfo packageInfo = null;
         try {
           packageInfo = pm.getPackageInfo(incompletePackageInfo.packageName,
-               PackageManager.GET_ACTIVITIES| PackageManager.GET_GIDS| PackageManager.GET_CONFIGURATIONS|
-               PackageManager.GET_INSTRUMENTATION| PackageManager.GET_PERMISSIONS| PackageManager.GET_PROVIDERS|
-               PackageManager.GET_RECEIVERS| PackageManager.GET_SERVICES| PackageManager.GET_SIGNATURES| 
-               PackageManager.GET_UNINSTALLED_PACKAGES);
+               PackageManager.GET_PERMISSIONS);
         } catch (android.content.pm.PackageManager.NameNotFoundException e) {
           log(e.toString());
           continue;
@@ -59,8 +56,6 @@ public class Main extends Activity
         //log(packageInfo.packageName + packageInfo.permissions);
         if (packageInfo.requestedPermissions != null) {
           for (String permission /*PermissionInfo permissionInfo*/: packageInfo.requestedPermissions) {
-            //String permission = permissionInfo.toString();
-            //permission = permission.substring(permission.indexOf(" "), permission.indexOf("}")).trim();
             if (permissionToAppMap.get(permission) == null) {
               permissionToAppMap.put(permission, new ArrayList<PackageInfo>());
             }
@@ -83,22 +78,32 @@ public class Main extends Activity
       }
     }
 
-    private void showAppsWithThisPermission(String permission) {
+    private ArrayList<PackageInfo> getAppsWithThisPermission(String permission) {
       assert (permissionToAppMap != null);
       ArrayList<PackageInfo> packages = permissionToAppMap.get(permission);
+      ArrayList<PackageInfo> result_packages = new ArrayList<PackageInfo>();
       log("Permission:" + permission);
       if (packages != null) {
         for (PackageInfo packageInfo: packages) {
           if ((packageInfo.applicationInfo != null) &&
               ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0)) {
-            //log("System package \"" + packageInfo.packageName + " \" has permission \"" +
-            //    permission + "\"");
+            // Ignore system apps.
           } else {
-            log ("Package: " + packageInfo.packageName);
+            result_packages.add(packageInfo);
           }
         }
-      } else {
+      }
+      return result_packages;
+    }
+
+    private void showAppsWithThisPermission(String permission) {
+      ArrayList<PackageInfo> packages = getAppsWithThisPermission(permission);
+      if (packages.size() == 0) {
         log("No package found with this permission");
+      } else {
+        for (PackageInfo packageInfo : packages) {
+          log("Package: " + packageInfo.packageName);
+        }
       }
     }
 
