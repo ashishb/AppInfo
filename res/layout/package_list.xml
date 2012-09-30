@@ -9,25 +9,13 @@
 <ListView android:id="@android:id/list"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0000DD"
+    android:background="#000000"
     android:layout_weight="1"
     android:drawSelectorOnTop="false"/>
 <TextView android:id="@android:id/empty"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF0000"
-    android:text="No data in the list"/>
-<TextView  
-    android:id="@+id/mainTextView"
-    android:layout_width="fill_parent" 
-    android:layout_height="wrap_content" 
-    android:text=""
-    />
-<TextView
-  android:id="@+id/elementTextView"
-  android:layout_width="fill_parent"
-  android:layout_height="wrap_content"
-  android:text="default value of elementTextView"
-  />
+    android:background="#000000"
+    android:text="No packages in the list"/>
 </LinearLayout>
 
