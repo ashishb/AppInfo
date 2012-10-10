@@ -3,18 +3,25 @@
       package="com.ashish.appinfo"
       android:versionCode="1"
       android:versionName="1.0">
-    <application android:label="@string/app_name" >
+    <uses-sdk android:minSdkVersion="8"
+              android:targetSdkVersion="10" />
+    <uses-permission android:name="android.permission.GET_PACKAGE_SIZE"/>
+    <application android:label="@string/app_name"
+                 android:icon="@drawable/ic_launcher">
         <activity android:name="Main"
                   android:label="@string/app_name"
-                  android:icon="@drawable/ic_launcher"
                   >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="PackageViewMain"
+                  android:label="@string/app_name" />
+        <activity android:name="PermissionViewMain"
+                  android:label="@string/app_name" />
         <activity android:name="PackageListActivity"
-                  android:label="@string/app_name">
-        </activity>
+                  android:exported="false"
+                  android:label="@string/app_name" />
     </application>
-</manifest> 
+</manifest>

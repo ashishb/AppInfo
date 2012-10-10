@@ -36,11 +36,14 @@ import java.util.Map.Entry;
 public class PackageViewMain extends ListActivity
 {
   static final String TAG = "AppInfo";
-  // Format: packageName => [codeSize, dataSize, cacheSize]
-  HashMap<String, ArrayList<Long>> packageToSizeMap;
-  ArrayList<String> packageWithSizeList;
-  PackageManager pm;
-  List<PackageInfo> packageInfos;
+  // Format: packageName => packageLabel, [codeSize, dataSize, cacheSize]
+  // Sizes are in KiB.
+  static HashMap<String, Pair<String, ArrayList<Long>>> packageMap;
+  static List<PackageInfo> packageInfos;
+  // packageList contains package names while packageListFancy contains names appended with
+  // some info like size etc.
+  // The second one is meant purely for display.
+  ArrayList<String> packageList, packageListFancy;
   TextView mainTextView;
   ListView listView;
 
@@ -49,49 +52,58 @@ public class PackageViewMain extends ListActivity
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.package_list);
-    pm = this.getPackageManager();
     listView = getListView();
-
-    //packageToSizeMap = new HashMap<String, ArrayList<Long>>(100);
     listView.setAdapter(
         new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, new String[] {}));
-    packageInfos = pm.getInstalledPackages(0);
+    final PackageManager pm = this.getPackageManager();
     final ListActivity mainActivity = this;
-    packageWithSizeList = new ArrayList<String>();
+    packageList = new ArrayList<String>();
+    packageListFancy = new ArrayList<String>();
     new Thread(new Runnable() {
         public void run() {
-          packageInfoInit();
+          // Do not call init again if it has already been called by some other activity (Main).
+          if (packageMap == null) {
+            packageInfoInit(pm);
+          }
           final int numOfTotalPackages = packageInfos.size();
-          while  (packageWithSizeList.size() < numOfTotalPackages) {
+          while  (packageMap.size() < numOfTotalPackages) {
             mainActivity.runOnUiThread(new Runnable() {
               public void run() {
                 ((TextView)listView.getEmptyView()).setText(
-                    "Loading " + 100*packageWithSizeList.size()/numOfTotalPackages + "%");
+                    "Loading " + 100 * packageMap.size()/numOfTotalPackages + "%");
               }});
             try { Thread.sleep(100); }
             catch (InterruptedException e) { Log.e(TAG, e.toString(), e); }
             continue;
           }
 
+          for (Object packageName: packageMap.keySet()) {
+            packageList.add((String)packageName);
+          }
           // Now sort the list by packagesize in descending order.
-          // TODO(ashishb): This is ugly and hacky, clean it up.
-          Collections.sort(packageWithSizeList, new Comparator<String>() {
+          Collections.sort(packageList, new Comparator<String>() {
                 @Override
                 public int compare(String str1, String str2) {
-                // Assuming format: app-name (size KB).
-                int s1 = Integer.parseInt(
-                  str1.substring(str1.indexOf("(") + 1, str1.indexOf(" ", str1.indexOf("("))));
-                int s2 = Integer.parseInt(
-                  str2.substring(str2.indexOf("(") + 1, str2.indexOf(" ", str2.indexOf("("))));
+                ArrayList<Long> arr1 = packageMap.get(str1).second;
+                ArrayList<Long> arr2 = packageMap.get(str2).second;
+                long s1 = arr1.get(0) + arr1.get(1) + arr1.get(2);
+                long s2 = arr2.get(0) + arr2.get(1) + arr2.get(2);
                 Log.e(TAG, " " + s1 + " " + s2);
-                return - (s1 - s2);
+                return - (int)(s1 - s2);
                 }
               });
+          // Now generate packageListFancy which will contain sorted data.
+          for (String packageName: packageList) {
+            String packageLabel = packageMap.get(packageName).first;
+            ArrayList<Long> sizes = packageMap.get(packageName).second;
+            long size = sizes.get(0) + sizes.get(1) + sizes.get(2);
+            packageListFancy.add((String)packageLabel + "(" + size/1024 + " MB)");
+          }
           mainActivity.runOnUiThread(new Runnable() {
             public void run() {
               listView.setAdapter(
                 new ArrayAdapter<String>(mainActivity, android.R.layout.simple_list_item_1,
-                  packageWithSizeList));
+                  packageListFancy));
           }
         });
       }}).start();
@@ -104,18 +116,18 @@ public class PackageViewMain extends ListActivity
 
   @Override
   public void onListItemClick(ListView l, View v, int position, long id) {
-    String entry = packageWithSizeList.get(position);
-    Log.i(TAG, String.format("Entry %d value %s clicked", position, entry));
-    // TODO(ashishb): Hacky code fix this.
-    // Assuming format packageName ( size)
-    String packageName = entry.substring(0, entry.indexOf("("));
+    String entry = (String)l.getAdapter().getItem(position);
+    //Log.i(TAG, String.format("Entry %d value %s clicked", position, entry));
+    String packageName = packageList.get(position);
     Uri packageUri = Uri.parse("package:" + packageName);
     PermissionViewMain.log("Invoking " + packageUri);
     Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
     startActivity(i);
   }
 
-  private void packageInfoInit() {
+  static void packageInfoInit(final PackageManager pm) {
+    packageMap = new HashMap<String, Pair<String, ArrayList<Long>>>(100);
+    packageInfos = pm.getInstalledPackages(0);
     // Inspired from http://www-jo.se/f.pfleger/android-package-size
     for (final PackageInfo incompletePackageInfo: packageInfos) {
       // Some reflection to use the hidden getPackageInfo method here.
@@ -127,20 +139,19 @@ public class PackageViewMain extends ListActivity
               @Override
               public void onGetStatsCompleted(PackageStats packageStats, boolean success)
               throws RemoteException {
-                long size = packageStats.codeSize + packageStats.dataSize + packageStats.cacheSize;
-                  // TODO(ashishb): Also check for these fields which were added after api 10.
-                  // packageStats.externalCodeSize;
-                  // packageStats.externalDataSize
-                  // packageStats.externalCacheSize;
-                //packageToSizeMap.put(incompletePackageInfo.packageName, sizeList);
-                packageWithSizeList.add(
-                  //incompletePackageInfo.applicationInfo.loadLabel(pm)
-                  incompletePackageInfo.packageName
-                  + "(" + size/(1000*1000) + " MB)");
-                //Log.i(TAG, "(" + size/1000 + " KB)");
+                // TODO(ashishb): Also check for these fields which were added after api 10.
+                // packageStats.externalCodeSize;
+                // packageStats.externalDataSize
+                // packageStats.externalCacheSize;
+                ArrayList<Long> sizes = new ArrayList<Long>(3);
+                sizes.add(packageStats.codeSize/1024);
+                sizes.add(packageStats.dataSize/1024);
+                sizes.add(packageStats.cacheSize/1024);
+                packageMap.put(incompletePackageInfo.packageName,
+                  new Pair(incompletePackageInfo.applicationInfo.loadLabel(pm),
+                    sizes));
               }
             });
-
       } catch (IllegalAccessException e) {
         Log.e(TAG, e.toString(), e);
       } catch (InvocationTargetException e) {

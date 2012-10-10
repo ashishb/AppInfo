@@ -2,6 +2,7 @@ package com.ashish.appinfo;
 
 import android.Manifest.permission;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -12,6 +13,9 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import android.util.Pair;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -32,7 +36,6 @@ public class Main extends ListActivity
 {
   static final String TAG = "AppInfo";
   String[] values = new String[] { "List packages (by size)", "List popular permissions"};
-  PackageManager pm;
   ArrayAdapter<String> listAdapter;
   TextView mainTextView;
   ListView listView;
@@ -46,11 +49,32 @@ public class Main extends ListActivity
     listAdapter = new ArrayAdapter<String>(this,
         android.R.layout.simple_list_item_1, values);
     listView.setAdapter(listAdapter);
+    // Starts threads which performs slow activity loading in the background.
+    initPackageViewMain();
+    initPermissionViewMain();
+  }
+
+  private void initPackageViewMain() {
+    final PackageManager pm = this.getPackageManager();
+    new Thread(new Runnable() {
+        public void run() {
+          PackageViewMain.packageInfoInit(pm);
+        }}).start();
+  }
+
+  private void initPermissionViewMain() {
+    final PackageManager pm = this.getPackageManager();
+    new Thread(new Runnable() {
+        public void run() {
+          PermissionViewMain.packageInfoInit(pm);
+        }}).start();
   }
 
   @Override
-  public void onResume() {
-    super.onResume();
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.main_menu, menu);
+    return true;
   }
 
   @Override
@@ -65,6 +89,24 @@ public class Main extends ListActivity
         i = new Intent(this, PermissionViewMain.class);
         startActivity(i);
       break;
+    }
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+      case R.id.about:
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        dialogBuilder.setMessage(R.string.about_message);
+        dialogBuilder.setPositiveButton("OK", null);
+        dialogBuilder.create().show();
+        return true;
+      case R.id.refresh:
+        initPackageViewMain();
+        initPermissionViewMain();
+        return true;
+      default:
+        return super.onOptionsItemSelected(item);
     }
   }
 

@@ -31,7 +31,7 @@ public class PermissionViewMain extends ListActivity
 {
   static final String TAG = "AppInfo";
   static final String PACKAGE_EXTRA = "packages";
-  HashMap<String, ArrayList<PackageInfo>> permissionToAppMap;
+  static HashMap<String, ArrayList<PackageInfo>> permissionToAppMap;
   PermissionListAdapter listAdapter;
   PackageManager pm;
   TextView mainTextView;
@@ -46,18 +46,22 @@ public class PermissionViewMain extends ListActivity
     listView = getListView();
     listView.setTextFilterEnabled(true);
     //showPermissionGroupInfo();
+    // TODO(ashishb): It might be better to add a check here which
+    // recomputes the list in case of (un)installation of a
+    // package.
+    // Compute package list only if its non-null since it might have been
+    // init by some other Activity (Main).
+    if (permissionToAppMap == null) {
+      packageInfoInit(pm);
+    }
+    listAdapter = new PermissionListAdapter(permissionToAppMap);
+    listView.setAdapter(listAdapter);
+    log("Count of permissions is " + listAdapter.getCount());
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    // TODO(ashishb): It might be better to add a check here which
-    // recomputes the list only in case of (un)installation of a
-    // package.
-    packageInfoInit();
-    listAdapter = new PermissionListAdapter(permissionToAppMap);
-    listView.setAdapter(listAdapter);
-    log("Count of permissions is " + listAdapter.getCount());
   }
 
   @Override
@@ -75,7 +79,7 @@ public class PermissionViewMain extends ListActivity
     }
   }
 
-  private void packageInfoInit() {
+  static void packageInfoInit(final PackageManager pm) {
     permissionToAppMap = new HashMap<String, ArrayList<PackageInfo>>(100);
     List<PackageInfo> packageInfos = pm.getInstalledPackages(0);
     for (PackageInfo incompletePackageInfo: packageInfos) {
