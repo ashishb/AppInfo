@@ -40,8 +40,8 @@ public class PackageListActivity extends ListActivity
       ListView listView = getListView();
       listView.setTextFilterEnabled(true);
       Intent i = getIntent();
-      if( i != null && i.hasExtra(Main.PACKAGE_EXTRA)) {
-        String[] packages = i.getStringArrayExtra(Main.PACKAGE_EXTRA);
+      if( i != null && i.hasExtra(PermissionViewMain.PACKAGE_EXTRA)) {
+        String[] packages = i.getStringArrayExtra(PermissionViewMain.PACKAGE_EXTRA);
         if (packages != null && packages.length > 0) {
           ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(this,
               android.R.layout.simple_list_item_1, packages);
@@ -50,13 +50,13 @@ public class PackageListActivity extends ListActivity
       }
     }
 
-    @Override 
+    @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
       // Assuming format: package_label (packageName).
       String packageName = l.getAdapter().getItem(position).toString();
       packageName = packageName.substring(packageName.indexOf("(") + 1, packageName.indexOf(")"));
       Uri packageUri = Uri.parse("package:" + packageName);
-      Main.log("Invoking " + packageUri);
+      PermissionViewMain.log("Invoking " + packageUri);
       Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri);
       startActivity(i);
 

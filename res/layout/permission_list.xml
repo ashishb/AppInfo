@@ -15,7 +15,13 @@
 <TextView android:id="@android:id/empty"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
-    android:text="Loading..."/>
+    android:background="#FF0000"
+    android:text="No data in the list"/>
+<!--<TextView  
+    android:id="@+id/mainTextView"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text=""
+    />-->
 </LinearLayout>
 
