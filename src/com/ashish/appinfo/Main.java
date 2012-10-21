@@ -35,7 +35,7 @@ import java.util.Map.Entry;
 public class Main extends ListActivity
 {
   static final String TAG = "AppInfo";
-  String[] values = new String[] { "List packages (by size)", "List popular permissions"};
+  String[] values = new String[] { "List popular permissions", "List packages (by size)" };
   ArrayAdapter<String> listAdapter;
   TextView mainTextView;
   ListView listView;
@@ -82,11 +82,11 @@ public class Main extends ListActivity
     Intent i;
     switch (position) {
       case 0:
-        i = new Intent(this, PackageViewMain.class);
+        i = new Intent(this, PermissionViewMain.class);
         startActivity(i);
         break;
       case 1:
-        i = new Intent(this, PermissionViewMain.class);
+        i = new Intent(this, PackageViewMain.class);
         startActivity(i);
       break;
     }
